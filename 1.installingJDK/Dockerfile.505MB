@@ -1,0 +1,16 @@
+# author	: siham sharif
+# date		: 30/Oct/2018
+# 
+# Installing JDK version 1.8.0_152 on Oracle Linux 6 base images provided by oracle container registry
+# this script sets up JAVA_HOME and copies jdk components to /usr/local/jdk directory
+# image size created using this Dockerfile 
+# build image by running ./build.sh provided in this directory
+# untar jdk-*.tar.gz file on the same directory as Dockerfile
+
+FROM container-registry.oracle.com/os/oraclelinux:6-slim
+
+MAINTAINER Siham Sharif <siham.sharif@gmail.com>
+
+ENV JAVA_HOME=/usr/local/jdk
+
+COPY jdk1.8.0_*/* $JAVA_HOME/
