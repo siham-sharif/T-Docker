@@ -4,4 +4,10 @@
 #
 #Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
-docker build -t devel-domain .
+# Copying necessary weblogic config files to container-scripts directory
+cp -r /home/$USER/projects/therap/suite/apps/server-config container-scripts/
+cp /usr/local/Oracle/user_projects/domains/devel/config/config.xml container-scripts/
+cp /home/$USER/projects/therap/suite/apps/build/libs/therap-suite.ear container-scripts/ 
+
+# Buidling docker images
+docker build -t therap-app:v1 .

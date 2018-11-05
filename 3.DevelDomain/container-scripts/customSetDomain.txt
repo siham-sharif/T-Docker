@@ -1,0 +1,90 @@
+#-----------------------------------------------------------------------
+# Custom startup script for Development Context
+#-----------------------------------------------------------------------
+
+umask 022
+
+JAVA_OPTIONS="${JAVA_OPTIONS} -Djava.security.egd=file:/dev/./urandom"
+
+`find /usr/local/Oracle/user_projects/ -iname "*therap-apps*" | awk '{system("rm -rf " $1 ";")}'`
+`find /usr/local/Oracle/user_projects/ -iname "*therap-suite*" | awk '{system("rm -rf " $1 ";")}'`
+
+DOMAIN_HOME="/usr/local/Oracle/user_projects/domains/devel"
+
+WLS_STDOUT_LOG="$DOMAIN_HOME/servers/AdminServer/logs/AdminServer.out"
+WLS_STDERR_LOG="$DOMAIN_HOME/servers/AdminServer/logs/AdminServer_err.out"
+
+USER_MEM_ARGS="-Xms2g -Xmx2g -XX:NewSize=2g -XX:MaxGCPauseMillis=2000 -XX:GCTimeRatio=49"
+USER_MEM_ARGS="${USER_MEM_ARGS} -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=1g"
+
+JAVA_OPTIONS="${JAVA_OPTIONS} -XX:ReservedCodeCacheSize=256m -XX:+CITime"
+JAVA_OPTIONS="${JAVA_OPTIONS} -XX:+UseParallelOldGC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps"
+JAVA_OPTIONS="${JAVA_OPTIONS} -XX:+DisableExplicitGC"
+
+EXTRA_JAVA_PROPERTIES="${EXTRA_JAVA_PROPERTIES} -ea:net.therap..."
+
+#Enabling Java Flight Recorder
+JAVA_OPTIONS="${JAVA_OPTIONS} -XX:+UnlockCommercialFeatures -XX:+FlightRecorder"
+#JAVA_OPTIONS="${JAVA_OPTIONS} -XX:StartFlightRecording=settings=profile,maxage=2h,name=therap \
+#                -XX:FlightRecorderOptions=disk=true,repository=/usr/local/jfr/repository,stackdepth=128"
+
+#Disable the enhanced increment advisor that was introduced in 12.2.1 to use the classic increment advisor, adding the following system property on ALL servers
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dweblogic.UseEnhancedIncrementAdvisor=false"
+
+#Skipping update check for ehcache and terracotta
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dorg.terracotta.quartz.skipUpdateCheck=true -Dnet.sf.ehcache.skipUpdateCheck=true"
+
+#Workaround for CDI app deployment in cluster
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dcom.sun.jersey.server.impl.cdi.lookupExtensionInBeanManager=true"
+#Proxy server settings
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dhttp.proxyHost=proxy.therapbd.net"
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dhttp.proxyPort=3128"
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dhttps.proxyHost=proxy.therapbd.net"
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dhttps.proxyPort=3128"
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dhttp.nonProxyHosts=*.therapbd.net"
+JAVA_OPTIONS="${JAVA_OPTIONS} -DUseSunHttpHandler=true"
+
+# WLS request tuning
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dweblogic.Chunksize=16384 -Dweblogic.PartitionSize=32"
+
+# JDBC optimization (the first one is a *** MUST ***)
+JAVA_OPTIONS="${JAVA_OPTIONS} -Doracle.jdbc.maxCachedBufferSize=19"
+
+# Misc.
+JAVA_OPTIONS="${JAVA_OPTIONS} -Djava.net.preferIPv4Stack=true"
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dfile.encoding=UTF-8"
+
+# For Therap apps
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dhost.props=${DOMAIN_HOME}/config/app-host.properties"
+
+# Logback
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dlogback.configurationFile=${DOMAIN_HOME}/config/log/logback.xml"
+
+# Coherence
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dtangosol.coherence.mode=prod"
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dtangosol.coherence.cluster=coherence-$(hostname -s)-cluster"
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dtangosol.coherence.clusterport=9099"
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dtangosol.coherence.ttl=1"
+
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dtangosol.coherence.cacheconfig=${DOMAIN_HOME}/config/coherence/coherence-cache-config.xml"
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dtangosol.coherence.override=${DOMAIN_HOME}/config/coherence/tangosol-coherence-override.xml"
+
+#Oracle 12.2.0.1.0 JDBC 4.2 compiled with javac 1.8.0_91 on Tue_Dec_13_06:08:31_PST_2016
+EXT_PRE_CLASSPATH="${EXT_PRE_CLASSPATH}:${DOMAIN_HOME}/config/ojdbc/ojdbc8.jar"
+EXT_PRE_CLASSPATH="${EXT_PRE_CLASSPATH}:${DOMAIN_HOME}/config/ojdbc/ojdbc8_g.jar"
+EXT_PRE_CLASSPATH="${EXT_PRE_CLASSPATH}:${DOMAIN_HOME}/config/ojdbc/ojdbc8dms.jar"
+EXT_PRE_CLASSPATH="${EXT_PRE_CLASSPATH}:${DOMAIN_HOME}/config/ojdbc/ojdbc8dms_g.jar"
+
+# Hazelcast
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dhazelcast.group.name=hazelcast-$(hostname -s)-cluster"
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dhazelcast.group.password=prodHazelcastCluster"
+JAVA_OPTIONS="${JAVA_OPTIONS} -Dhazelcast.shutdownhook.enabled=false"
+
+# Development configurations
+JAVA_OPTIONS="${JAVA_OPTIONS} -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"
+
+# Disabling Derby server
+export DERBY_FLAG=false
+#export EXT_PRE_CLASSPATH
+
+#---------------------------------------------------------End of Custom Settings--------------------------------------------------------
